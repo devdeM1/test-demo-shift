@@ -16,8 +16,8 @@ public class Main {
             }
             reader.close();
             System.out.println(all_text);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
         }
 
         try(FileWriter writer = new FileWriter("output.txt", false))
