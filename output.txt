@@ -1,0 +1,7 @@
+ Manager 1 Jane Smith 5000 HR
+Employee 101 John Doe 3000 1
+Employee 102 Emily Johnson abc 1
+Manager 2 Michael Brown 6000 Sales
+Employee 103 Chris White-2900 2
+Employee 104 Anna Taylor 31002
+Employee 105 Robert Black 2
