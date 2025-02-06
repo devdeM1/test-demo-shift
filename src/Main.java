@@ -4,8 +4,6 @@ import java.util.*;
 
 public class Main {
 
-
-
     static abstract class Person {
         String position;
         Long id;
@@ -48,6 +46,7 @@ public class Main {
     private static Map<Long, List<Employee>> departmentEmployees = new HashMap<>();
     private static Map<Long, Manager> managers = new HashMap<>();
     private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
+    private static Set<Long> usedIds = new HashSet<>();
     private static String outputPath = null;
     private static String sortField = null;
     private static String sortOrder = null;
@@ -149,6 +148,11 @@ public class Main {
                     continue;
                 }
 
+                if (usedIds.contains(id)) {
+                    invalidData.add(line);
+                    continue;
+                }
+
                 if ("Manager".equalsIgnoreCase(position)) {
                     String departmentName = parts[4].trim();
                     Manager manager = new Manager(position, id, name, salary, departmentName);
@@ -156,12 +160,14 @@ public class Main {
                     managers.put(id, manager);
                     departmentStats.put(departmentName, new DepartmentStats());
                     departmentStats.get(departmentName).addEmployee(salary);
+                    usedIds.add(id);
                 } else if ("Employee".equalsIgnoreCase(position)) {
                     String managerId = parts[4].trim();
                     try {
                         Long manId = Long.parseLong(managerId);
                         Employee employee = new Employee(position, id, name, salary, manId);
                         persons.add(employee);
+                        usedIds.add(id);
                     } catch (NumberFormatException e) {
                         invalidData.add(line);
                     }
