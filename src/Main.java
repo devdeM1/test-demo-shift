@@ -3,50 +3,67 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.*;
 
 public class Main {
 
-    static class Employee {
+    static abstract class Person {
         String position;
-        int id;
+        Long id;
         String name;
-        double salary;
-        String managerId;
+        BigDecimal salary;
 
-        public Employee(String position, int id, String name, double salary, String managerId) {
+        public Person(String position, Long id, String name, BigDecimal salary) {
             this.position = position;
             this.id = id;
             this.name = name;
             this.salary = salary;
-            this.managerId = managerId;
         }
 
         @Override
         public String toString() {
-            return position + ", " + id + ", " + name + ", " + Math.ceil(salary * 100) / 100;
+            return position + ", " + id + ", " + name + ", " + salary;
         }
     }
 
-    private static List<Employee> employees = new ArrayList<>();
-    private static List<String> invalidData = new ArrayList<>();
-    private static Map<Integer, List<Employee>> departmentEmployees = new HashMap<>();
-    private static Map<String, Employee> managers = new HashMap<>();
-    private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
+    static class Manager extends Person {
+        String departmentName;
 
+        public Manager(String position, Long id, String name, BigDecimal salary, String departmentName) {
+            super(position, id, name, salary);
+            this.departmentName = departmentName;
+        }
+    }
+
+    static class Employee extends Person {
+        Long managerId;
+
+        public Employee(String position, Long id, String name, BigDecimal salary, Long managerId) {
+            super(position, id, name, salary);
+            this.managerId = managerId;
+        }
+    }
+
+    private static List<Person> persons = new ArrayList<>();
+    private static List<String> invalidData = new ArrayList<>();
+    private static Map<Long, List<Employee>> departmentEmployees = new HashMap<>();
+    private static Map<Long, Manager> managers = new HashMap<>();
+    private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
     private static String outputPath = null;
 
     private static class DepartmentStats {
         int employeeCount = 0;
-        double totalSalary = 0.0;
+        BigDecimal totalSalary = BigDecimal.ZERO;
 
-        public void addEmployee(double salary) {
+        public void addEmployee(BigDecimal salary) {
             employeeCount++;
-            totalSalary += salary;
+            totalSalary = totalSalary.add(salary);
         }
 
         public String getStats() {
-            double averageSalary = employeeCount > 0 ? Math.ceil(totalSalary / employeeCount * 100) / 100 : 0.0;
+            if (employeeCount == 0) return "0, 0.00";
+            BigDecimal averageSalary = totalSalary.divide(BigDecimal.valueOf(employeeCount), 2, BigDecimal.ROUND_HALF_UP);
             return employeeCount + ", " + averageSalary;
         }
     }
@@ -70,7 +87,7 @@ public class Main {
         }
 
         readDataFromFile(inputFile);
-        processEmployees();
+        processPersons();
         writeOutput();
     }
 
@@ -88,23 +105,46 @@ public class Main {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
+                if (parts.length != 5) {
+                    invalidData.add(line);
+                    continue;
+                }
+
+                String position = parts[0].trim();
+                Long id;
+                String name = parts[2].trim();
+                BigDecimal salary;
+
+
                 try {
-                    if (parts.length != 5) throw new IllegalArgumentException("Incorrect number of fields");
-
-                    String position = parts[0].trim();
-                    int id = Integer.parseInt(parts[1].trim());
-                    String name = parts[2].trim();
-                    double salary = Double.parseDouble(parts[3].trim());
-                    String managerId = parts[4].trim();
-
-                    if (salary <= 0 || (position.equals("Employee") && managerId.isEmpty())) {
-                        throw new IllegalArgumentException("Invalid employee data");
+                    id = Long.parseLong(parts[1].trim());
+                    salary = new BigDecimal(parts[3].trim());
+                    if (salary.compareTo(BigDecimal.ZERO) < 0) {
+                        invalidData.add(line);
+                        continue;
                     }
+                } catch (NumberFormatException e) {
+                    invalidData.add(line);
+                    continue;
+                }
 
-                    Employee employee = new Employee(position, id, name, salary, managerId);
-                    employees.add(employee);
-
-                } catch (Exception e) {
+                if ("Manager".equalsIgnoreCase(position)) {
+                    String departmentName = parts[4].trim();
+                    Manager manager = new Manager(position, id, name, salary, departmentName);
+                    persons.add(manager);
+                    managers.put(id, manager);
+                    departmentStats.put(departmentName, new DepartmentStats());
+                    departmentStats.get(departmentName).addEmployee(salary);
+                } else if ("Employee".equalsIgnoreCase(position)) {
+                    String managerId = parts[4].trim();
+                    try {
+                        Long manId = Long.parseLong(managerId);
+                        Employee employee = new Employee(position, id, name, salary, manId);
+                        persons.add(employee);
+                    } catch (NumberFormatException e) {
+                        invalidData.add(line);
+                    }
+                } else {
                     invalidData.add(line);
                 }
             }
@@ -113,49 +153,38 @@ public class Main {
         }
     }
 
-    private static void processEmployees() {
-        for (Employee employee : employees) {
-            if ("Manager".equals(employee.position)) {
-                managers.put(String.valueOf(employee.id), employee);
-                departmentStats.put(employee.managerId, new DepartmentStats());
-                departmentStats.get(employee.managerId).addEmployee(employee.salary);
-            } else if ("Employee".equals(employee.position)) {
-                if (managers.containsKey(employee.managerId)) {
-                    departmentEmployees.putIfAbsent(Integer.parseInt(employee.managerId), new ArrayList<>());
-                    departmentEmployees.get(Integer.parseInt(employee.managerId)).add(employee);
-                    departmentStats.get(managers.get(employee.managerId).managerId).addEmployee(employee.salary);
+    private static void processPersons() {
+        for (Person person : persons) {
+            if (person instanceof Employee) {
+                Employee employee = (Employee) person;
+                Manager manager = managers.get(employee.managerId);
+                if (manager != null) {
+                    departmentEmployees.putIfAbsent(manager.id, new ArrayList<>());
+                    departmentEmployees.get(manager.id).add(employee);
+                    departmentStats.get(manager.departmentName).addEmployee(employee.salary);
                 } else {
-                    invalidData.add(employee.toString());
+                    invalidData.add("Сотрудник без существующего менеджера: " + employee);
                 }
             }
         }
     }
 
     private static void writeOutput() {
-        try {
-            PrintWriter writer;
-            if (outputPath != null) {
-                writer = new PrintWriter(new FileWriter(outputPath));
-            } else {
-                writer = new PrintWriter(System.out);
-            }
+        try (PrintWriter writer = outputPath != null ? new PrintWriter(new FileWriter(outputPath)) : new PrintWriter(System.out)) {
             writeData(writer);
-            writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private static void writeData(PrintWriter writer) {
-        // Вывод данных
-        for (Map.Entry<String, Employee> entry : managers.entrySet()) {
-            Employee manager = entry.getValue();
-            String departmentName = manager.managerId; // Название отдела
+        for (Map.Entry<Long, Manager> entry : managers.entrySet()) {
+            Manager manager = entry.getValue();
+            String departmentName = manager.departmentName;
 
             writer.println(departmentName);
             writer.println(manager.toString());
 
-            // Вывод сотрудников, подчинённых данному менеджеру
             List<Employee> subordinates = departmentEmployees.get(manager.id);
             if (subordinates != null) {
                 for (Employee subordinate : subordinates) {
@@ -163,11 +192,10 @@ public class Main {
                 }
             }
 
-            // Вывод статистики для отдела
             writer.println(departmentStats.get(departmentName).getStats());
+            writer.println();
         }
 
-        // Вывод некорректных данных
         if (!invalidData.isEmpty()) {
             writer.println("Некорректные данные:");
             for (String invalid : invalidData) {
