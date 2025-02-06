@@ -1,12 +1,10 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigDecimal;
 import java.util.*;
 
 public class Main {
+
+
 
     static abstract class Person {
         String position;
@@ -51,6 +49,8 @@ public class Main {
     private static Map<Long, Manager> managers = new HashMap<>();
     private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
     private static String outputPath = null;
+    private static String sortField = null;
+    private static String sortOrder = null;
 
     private static class DepartmentStats {
         int employeeCount = 0;
@@ -83,11 +83,33 @@ public class Main {
                 } else if (parts[1].equals("console")) {
                     outputPath = null;
                 }
+
+            } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
+                sortField = arg.split("=")[1];
+            } else if (arg.startsWith("--order=") || arg.startsWith("-o=")) {
+                sortOrder = arg.split("=")[1];
             }
         }
 
         readDataFromFile(inputFile);
         processPersons();
+
+        if (sortField != null && sortOrder == null) {
+            System.err.println("Error: --order parameter is required when --sort is specified.");
+            return;
+        }
+
+        if ("name".equalsIgnoreCase(sortField) || "salary".equalsIgnoreCase(sortField)) {
+            if (sortOrder == null) {
+                System.err.println("Error: --order parameter is required when --sort is specified.");
+                return;
+            }
+            if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
+                System.err.println("Error: Invalid order specified. Use 'asc' or 'desc'.");
+                return;
+            }
+        }
+
         writeOutput();
     }
 
@@ -114,7 +136,6 @@ public class Main {
                 Long id;
                 String name = parts[2].trim();
                 BigDecimal salary;
-
 
                 try {
                     id = Long.parseLong(parts[1].trim());
@@ -163,7 +184,7 @@ public class Main {
                     departmentEmployees.get(manager.id).add(employee);
                     departmentStats.get(manager.departmentName).addEmployee(employee.salary);
                 } else {
-                    invalidData.add("Сотрудник без существующего менеджера: " + employee);
+                    invalidData.add("" + employee);
                 }
             }
         }
@@ -171,9 +192,41 @@ public class Main {
 
     private static void writeOutput() {
         try (PrintWriter writer = outputPath != null ? new PrintWriter(new FileWriter(outputPath)) : new PrintWriter(System.out)) {
+            if (sortField != null) {
+                sortPersons();
+            }
             writeData(writer);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void sortPersons() {
+        List<Employee> allEmployees = new ArrayList<>();
+
+        for (Map.Entry<Long, List<Employee>> entry : departmentEmployees.entrySet()) {
+            allEmployees.addAll(entry.getValue());
+        }
+
+        Comparator<Employee> comparator;
+        if ("name".equalsIgnoreCase(sortField)) {
+            comparator = Comparator.comparing(e -> e.name);
+        } else {
+            comparator = Comparator.comparing(e -> e.salary);
+        }
+
+        if ("desc".equalsIgnoreCase(sortOrder)) {
+            comparator = comparator.reversed();
+        }
+
+        allEmployees.sort(comparator);
+
+        for (Map.Entry<Long, List<Employee>> entry : departmentEmployees.entrySet()) {
+            entry.setValue(new ArrayList<>());
+        }
+
+        for (Employee employee : allEmployees) {
+            departmentEmployees.get(managers.get(employee.managerId).id).add(employee);
         }
     }
 
@@ -191,7 +244,6 @@ public class Main {
                     writer.println(subordinate.toString());
                 }
             }
-
             writer.println(departmentStats.get(departmentName).getStats());
             writer.println();
         }
