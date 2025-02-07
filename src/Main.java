@@ -74,8 +74,15 @@ public class Main {
 
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
+        Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--sort=", "--order=", "-s=", "-o="));
 
         for (String arg : args) {
+            boolean isValidFlag = validFlags.stream().anyMatch(arg::startsWith);
+            if (!isValidFlag) {
+                System.err.println("Error: Unknown flag: " + arg);
+                return;
+            }
+
             if (arg.startsWith("--output=")) {
                 String[] parts = arg.split("=");
                 if (parts.length != 2 || parts[1].isEmpty()) {
