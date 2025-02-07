@@ -75,6 +75,12 @@ public class Main {
             if (arg.startsWith("--output=")) {
                 outputParameterFound = true;
                 String[] parts = arg.split("=");
+                if (parts.length < 2 || parts[1].isEmpty()) {
+                    System.err.println("Error: --output parameter value cannot be empty." +
+                                        " Use a --output=file for output data in file" +
+                                        " or --output=console for output data in console");
+                    return;
+                }
                 if (parts[1].equalsIgnoreCase("file")) {
                     outputPath = getOutputPath(args);
                     if (outputPath == null) {
