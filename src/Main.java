@@ -70,8 +70,11 @@ public class Main {
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
 
+        boolean outputParameterFound = false;
+
         for (String arg : args) {
             if (arg.startsWith("--output=")) {
+                outputParameterFound = true;
                 String[] parts = arg.split("=");
                 if (parts[1].equalsIgnoreCase("file")) {
                     outputPath = getOutputPath(args);
@@ -79,15 +82,28 @@ public class Main {
                         System.err.println("Error: Path to output file is missing.");
                         return;
                     }
+                    if (outputPath.trim().isEmpty()) {
+                        System.err.println("Error: Output path cannot be empty.");
+                        return;
+                    }
                 } else if (parts[1].equalsIgnoreCase("console")) {
                     outputPath = null;
                 }
-
             } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
                 sortField = arg.split("=")[1];
             } else if (arg.startsWith("--order=") || arg.startsWith("-o=")) {
                 sortOrder = arg.split("=")[1];
+            } else if (arg.startsWith("--path=")) {
+                if (!outputParameterFound) {
+                    System.err.println("Error: Incorrect usage. Please specify --output=file or --output=console.");
+                    return;
+                }
             }
+        }
+
+        if (outputPath == null && args.length > 0 && Arrays.stream(args).anyMatch(a -> a.startsWith("--output"))) {
+            System.err.println("Error: --output=file parameter is required when specifying output path.");
+            return;
         }
 
         readDataFromFile(inputFile);
