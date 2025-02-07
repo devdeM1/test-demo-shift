@@ -121,6 +121,10 @@ public class Main {
                     System.err.println("Error: --order parameter value cannot be empty. Use --order=asc or --order=desc.");
                     return;
                 }
+                if (sortField == null) {
+                    System.err.println("Error: --order parameter cannot be specified without --sort.");
+                    return;
+                }
                 sortOrder = parts[1].toLowerCase();
                 if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
                     System.err.println("Error: Invalid order specified. Use 'asc' or 'desc'.");
