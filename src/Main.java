@@ -75,10 +75,9 @@ public class Main {
             if (arg.startsWith("--output=")) {
                 outputParameterFound = true;
                 String[] parts = arg.split("=");
-                if (parts.length < 2 || parts[1].isEmpty()) {
-                    System.err.println("Error: --output parameter value cannot be empty." +
-                                        " Use a --output=file for output data in file" +
-                                        " or --output=console for output data in console");
+                if (parts.length != 2 || parts[1].isEmpty()) {
+                    System.err.println("Error: --output parameter value cannot be empty. " +
+                            "Use --output=file for file output or --output=console for console output.");
                     return;
                 }
                 if (parts[1].equalsIgnoreCase("file")) {
@@ -89,6 +88,9 @@ public class Main {
                     }
                 } else if (parts[1].equalsIgnoreCase("console")) {
                     outputPath = null;
+                } else {
+                    System.err.println("Error: Invalid value for --output. Use --output=file or --output=console.");
+                    return;
                 }
             } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
                 sortField = arg.split("=")[1];
@@ -102,7 +104,12 @@ public class Main {
             }
         }
 
-        if (outputPath == null && args.length > 0 && Arrays.stream(args).anyMatch(a -> a.startsWith("--output"))) {
+        if (!outputParameterFound) {
+            System.err.println("Error: --output parameter is required. Please specify --output=file or --output=console.");
+            return;
+        }
+
+        if (outputPath == null && args.length > 0 && Arrays.stream(args).anyMatch(a -> a.startsWith("--output=file"))) {
             System.err.println("Error: --output=file parameter is required when specifying output path.");
             return;
         }
