@@ -69,11 +69,9 @@ public class Main {
 
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
-        boolean outputParameterFound = false;
 
         for (String arg : args) {
             if (arg.startsWith("--output=")) {
-                outputParameterFound = true;
                 String[] parts = arg.split("=");
                 if (parts.length != 2 || parts[1].isEmpty()) {
                     System.err.println("Error: --output parameter value cannot be empty. " +
@@ -93,25 +91,28 @@ public class Main {
                     return;
                 }
             } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
-                sortField = arg.split("=")[1];
+                String[] parts = arg.split("=");
+                if (parts.length != 2 || parts[1].isEmpty() || (!"name".equalsIgnoreCase(parts[1]) && !"salary".equalsIgnoreCase(parts[1]))) {
+                    System.err.println("Error: Invalid value for --sort or -s. Only --sort=name or --sort=salary is allowed.");
+                    return;
+                }
+                sortField = parts[1].toLowerCase();
             } else if (arg.startsWith("--order=") || arg.startsWith("-o=")) {
-                sortOrder = arg.split("=")[1];
-            } else if (arg.startsWith("--path=")) {
-                if (!outputParameterFound) {
-                    System.err.println("Error: Incorrect usage. Please specify --output=file or --output=console.");
+                String[] parts = arg.split("=");
+                if (parts.length != 2 || parts[1].isEmpty()) {
+                    System.err.println("Error: --order parameter value cannot be empty. Use --order=asc or --order=desc.");
+                    return;
+                }
+                sortOrder = parts[1].toLowerCase();
+                if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
+                    System.err.println("Error: Invalid order specified. Use 'asc' or 'desc'.");
                     return;
                 }
             }
         }
 
-        if (!outputParameterFound) {
-            System.err.println("Error: --output parameter is required. Please specify --output=file or --output=console.");
-            return;
-        }
-
-        if (outputPath == null && args.length > 0 && Arrays.stream(args).anyMatch(a -> a.startsWith("--output=file"))) {
-            System.err.println("Error: --output=file parameter is required when specifying output path.");
-            return;
+        if (outputPath == null) {
+            outputPath = "console";
         }
 
         readDataFromFile(inputFile);
@@ -120,17 +121,6 @@ public class Main {
         if (sortField != null && sortOrder == null) {
             System.err.println("Error: --order parameter is required when --sort is specified.");
             return;
-        }
-
-        if ("name".equalsIgnoreCase(sortField) || "salary".equalsIgnoreCase(sortField)) {
-            if (sortOrder == null) {
-                System.err.println("Error: --order parameter is required when --sort is specified.");
-                return;
-            }
-            if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
-                System.err.println("Error: Invalid order specified. Use 'asc' or 'desc'.");
-                return;
-            }
         }
 
         writeOutput();
@@ -225,7 +215,8 @@ public class Main {
     }
 
     private static void writeOutput() {
-        try (PrintWriter writer = outputPath != null ? new PrintWriter(new FileWriter(outputPath)) : new PrintWriter(System.out)) {
+        try (PrintWriter writer = outputPath.equals("console") ?
+                new PrintWriter(System.out) : new PrintWriter(new FileWriter(outputPath))) {
             if (sortField != null) {
                 sortPersons();
             }
