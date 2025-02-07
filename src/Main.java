@@ -24,6 +24,7 @@ public class Main {
     }
 
     static class Manager extends Person {
+
         String departmentName;
 
         public Manager(String position, Long id, String name, BigDecimal salary, String departmentName) {
@@ -33,6 +34,7 @@ public class Main {
     }
 
     static class Employee extends Person {
+
         Long managerId;
 
         public Employee(String position, Long id, String name, BigDecimal salary, Long managerId) {
@@ -52,6 +54,7 @@ public class Main {
     private static String sortOrder = null;
 
     private static class DepartmentStats {
+
         int employeeCount = 0;
         BigDecimal totalSalary = BigDecimal.ZERO;
 
@@ -61,7 +64,9 @@ public class Main {
         }
 
         public String getStats() {
-            if (employeeCount == 0) return "0, 0.00";
+            if (employeeCount == 0){
+                return "0, 0.00";
+            }
             BigDecimal averageSalary = totalSalary.divide(BigDecimal.valueOf(employeeCount), 2, BigDecimal.ROUND_HALF_UP);
             return employeeCount + ", " + averageSalary;
         }
