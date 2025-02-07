@@ -69,7 +69,6 @@ public class Main {
 
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
-
         boolean outputParameterFound = false;
 
         for (String arg : args) {
@@ -80,10 +79,6 @@ public class Main {
                     outputPath = getOutputPath(args);
                     if (outputPath == null) {
                         System.err.println("Error: Path to output file is missing.");
-                        return;
-                    }
-                    if (outputPath.trim().isEmpty()) {
-                        System.err.println("Error: Output path cannot be empty.");
                         return;
                     }
                 } else if (parts[1].equalsIgnoreCase("console")) {
@@ -131,7 +126,11 @@ public class Main {
     private static String getOutputPath(String[] args) {
         for (String arg : args) {
             if (arg.startsWith("--path=")) {
-                return arg.split("=")[1];
+                String[] parts = arg.split("=");
+                if (parts.length < 2 || parts[1].isEmpty()) {
+                    return null;
+                }
+                return parts[1];
             }
         }
         return null;
