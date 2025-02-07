@@ -64,7 +64,7 @@ public class Main {
         }
 
         public String getStats() {
-            if (employeeCount == 0){
+            if (employeeCount == 0) {
                 return "0, 0.00";
             }
             BigDecimal averageSalary = totalSalary.divide(BigDecimal.valueOf(employeeCount), 2, BigDecimal.ROUND_HALF_UP);
@@ -74,7 +74,9 @@ public class Main {
 
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
-        Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--sort=", "--order=", "-s=", "-o="));
+        Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--path",
+                                                            "--sort=", "--order=",
+                                                            "-s=", "-o="));
 
         for (String arg : args) {
             boolean isValidFlag = validFlags.stream().anyMatch(arg::startsWith);
@@ -98,6 +100,10 @@ public class Main {
                     }
                 } else if (parts[1].equalsIgnoreCase("console")) {
                     outputPath = null;
+                    if (Arrays.stream(args).anyMatch(argPath -> argPath.startsWith("--path="))) {
+                        System.err.println("Error: --path cannot be specified when --output is set to console.");
+                        return;
+                    }
                 } else {
                     System.err.println("Error: Invalid value for --output. Use --output=file or --output=console.");
                     return;
