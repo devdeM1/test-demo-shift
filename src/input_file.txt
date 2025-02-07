@@ -1,4 +1,5 @@
 Manager, 1, Jane Smith, 5000.0, HR
+Manager, 1, YOU LOSE, 5000.0, HR
 Employee, 101, John Doe, 3000.5, 1
 Employee, 102, Emily Johnson, abc, 1
 Manager, 2, Michael Brown, 6000.8, Sales

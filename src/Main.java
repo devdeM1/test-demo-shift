@@ -73,13 +73,13 @@ public class Main {
         for (String arg : args) {
             if (arg.startsWith("--output=")) {
                 String[] parts = arg.split("=");
-                if (parts[1].equals("file")) {
+                if (parts[1].equalsIgnoreCase("file")) {
                     outputPath = getOutputPath(args);
                     if (outputPath == null) {
                         System.err.println("Error: Path to output file is missing.");
                         return;
                     }
-                } else if (parts[1].equals("console")) {
+                } else if (parts[1].equalsIgnoreCase("console")) {
                     outputPath = null;
                 }
 
