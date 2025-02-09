@@ -46,9 +46,8 @@ public class Main {
     private static List<Person> persons = new ArrayList<>();
     private static List<String> invalidData = new ArrayList<>();
     private static Map<Long, List<Employee>> departmentEmployees = new HashMap<>();
-    private static Map<Long, Manager> managers = new HashMap<>();
+    private static Map<Long, Manager> managerMap = new HashMap<>();
     private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
-    private static Set<Long> usedIds = new HashSet<>();
     private static String outputPath = null;
     private static String sortField = null;
     private static String sortOrder = null;
@@ -85,7 +84,7 @@ public class Main {
                 return;
             }
 
-            if (arg.startsWith("--output=")) {
+            if (arg.startsWith("--output=")|| arg.startsWith("-o=")) {
                 String[] parts = arg.split("=");
                 if (parts.length != 2 || parts[1].isEmpty()) {
                     System.err.println("Error: --output parameter value cannot be empty. " +
@@ -115,7 +114,7 @@ public class Main {
                     return;
                 }
                 sortField = parts[1].toLowerCase();
-            } else if (arg.startsWith("--order=") || arg.startsWith("-o=")) {
+            } else if (arg.startsWith("--order=")) {
                 String[] parts = arg.split("=");
                 if (parts.length != 2 || parts[1].isEmpty()) {
                     System.err.println("Error: --order parameter value cannot be empty. Use --order=asc or --order=desc.");
@@ -188,7 +187,8 @@ public class Main {
                     continue;
                 }
 
-                if (usedIds.contains(id)) {
+                boolean idExists = persons.stream().anyMatch(p -> p.id.equals(id));
+                if (idExists) {
                     invalidData.add(line);
                     continue;
                 }
@@ -197,17 +197,15 @@ public class Main {
                     String departmentName = parts[4].trim();
                     Manager manager = new Manager(position, id, name, salary, departmentName);
                     persons.add(manager);
-                    managers.put(id, manager);
+                    managerMap.put(id, manager);
                     departmentStats.put(departmentName, new DepartmentStats());
                     departmentStats.get(departmentName).addEmployee(salary);
-                    usedIds.add(id);
                 } else if ("Employee".equalsIgnoreCase(position)) {
                     String managerId = parts[4].trim();
                     try {
                         Long manId = Long.parseLong(managerId);
                         Employee employee = new Employee(position, id, name, salary, manId);
                         persons.add(employee);
-                        usedIds.add(id);
                     } catch (NumberFormatException e) {
                         invalidData.add(line);
                     }
@@ -224,7 +222,7 @@ public class Main {
         for (Person person : persons) {
             if (person instanceof Employee) {
                 Employee employee = (Employee) person;
-                Manager manager = managers.get(employee.managerId);
+                Manager manager = managerMap.get(employee.managerId);
                 if (manager != null) {
                     departmentEmployees.putIfAbsent(manager.id, new ArrayList<>());
                     departmentEmployees.get(manager.id).add(employee);
@@ -273,12 +271,12 @@ public class Main {
         }
 
         for (Employee employee : allEmployees) {
-            departmentEmployees.get(managers.get(employee.managerId).id).add(employee);
+            departmentEmployees.get(managerMap.get(employee.managerId).id).add(employee);
         }
     }
 
     private static void writeData(PrintWriter writer) {
-        for (Map.Entry<Long, Manager> entry : managers.entrySet()) {
+        for (Map.Entry<Long, Manager> entry : managerMap.entrySet()) {
             Manager manager = entry.getValue();
             String departmentName = manager.departmentName;
 
