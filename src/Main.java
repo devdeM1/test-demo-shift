@@ -19,7 +19,7 @@ public class Main {
 
         @Override
         public String toString() {
-            return position + ", " + id + ", " + name + ", " + salary;
+            return String.join(", ", position, String.valueOf(id), name, salary.toString());
         }
     }
 
@@ -48,7 +48,7 @@ public class Main {
     private static Map<Long, List<Employee>> departmentEmployees = new HashMap<>();
     private static Map<Long, Manager> managerMap = new HashMap<>();
     private static Map<String, DepartmentStats> departmentStats = new HashMap<>();
-    private static String outputPath = null;
+    private static String outputPath = "console";
     private static String sortField = null;
     private static String sortOrder = null;
 
@@ -79,10 +79,6 @@ public class Main {
 
         if (!parseArguments(args, validFlags)) {
             return;
-        }
-
-        if (outputPath == null) {
-            outputPath = "console";
         }
 
         readDataFromFile(inputFile);
@@ -142,7 +138,6 @@ public class Main {
                 return false;
             }
         } else if (parts[1].equalsIgnoreCase("console")) {
-            outputPath = null;
             if (Arrays.stream(args).anyMatch(argPath -> argPath.startsWith("--path="))) {
                 printError("--path cannot be specified when --output is set to console.");
                 return false;
