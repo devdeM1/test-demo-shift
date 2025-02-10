@@ -240,6 +240,8 @@ public class Main {
                     invalidData.add(line);
                 }
             }
+        } catch (FileNotFoundException e) {
+            printError("File " + filename + " not found. Please check the file path.");
         } catch (IOException e) {
             e.printStackTrace();
         }
