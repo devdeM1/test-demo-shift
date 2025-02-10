@@ -19,7 +19,9 @@ public class Main {
 
         @Override
         public String toString() {
-            return String.join(", ", position, String.valueOf(id), name, salary.setScale(2, BigDecimal.ROUND_CEILING).toString());
+            return String.join(", ", position,
+                    String.valueOf(id), name,
+                    salary.setScale(2, BigDecimal.ROUND_CEILING).toString());
         }
     }
 
@@ -63,14 +65,15 @@ public class Main {
             if (employeeCount == 0) {
                 return "0, 0.00";
             }
-            BigDecimal averageSalary = totalSalary.divide(BigDecimal.valueOf(employeeCount), 2, BigDecimal.ROUND_CEILING);
+            BigDecimal averageSalary = totalSalary.divide(BigDecimal.valueOf(employeeCount),
+                                                    2, BigDecimal.ROUND_CEILING);
             return employeeCount + ", " + averageSalary.setScale(2, BigDecimal.ROUND_CEILING).toString();
         }
     }
 
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
-        Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--path",
+        Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--path=",
                 "--sort=", "--order=",
                 "-s=", "-o="));
 
@@ -92,7 +95,35 @@ public class Main {
     private static boolean parseArguments(String[] args, Set<String> validFlags) {
         for (String arg : args) {
             if (!isValidFlag(arg, validFlags)) {
-                printError("Unknown flag: " + arg);
+                printError("Unknown flag: " + arg + "\n"
+                        + "Please specify the program's startup parameters using the following flags: \n"
+                        + "1. **--output=<file|console>**\n"
+                        + "   - Determines where to output the data.\n"
+                        + "   - `file` — output to a file.\n"
+                        + "   - `console` — output to the console.\n"
+                        + "2. **--path=<file path>**\n"
+                        + "   - Specifies the output file path (only required if `--output=file` is set).\n"
+                        + "3. **--sort=<name|salary>**\n"
+                        + "   - Indicates the field by which to sort employees.\n"
+                        + "   - `name` — sort by name.\n"
+                        + "   - `salary` — sort by salary.\n"
+                        + "4. **--order=<asc|desc>**\n"
+                        + "   - Specifies the sort order (required when using `--sort`).\n"
+                        + "   - `asc` — ascending order.\n"
+                        + "   - `desc` — descending order.\n"
+                        + "5. **-s=<name|salary>**\n"
+                        + "   - A version of the `--sort` flag.\n"
+                        + "6. **-o=<file|console>**\n"
+                        + "   - A shorthand version of the `--output` flag.\n"
+                        + "### Usage Examples:\n"
+                        + " - To output to a file: `--output=file --path=output.txt`\n"
+                        + " - To output to the console: `--output=console`\n"
+                        + " - To sort by name in descending order: `--sort=name --order=desc`\n"
+                        + "### Notes:\n"
+                        + " - Ensure all required flags are specified correctly to avoid errors.\n"
+                        + " - The file path must be valid if you are using the `--path` flag.\n"
+                        + " - The `--order` and `--sort` flags must be used together.\n"
+                );
                 return false;
             }
 
@@ -124,7 +155,8 @@ public class Main {
     private static boolean handleOutputFlag(String arg, String[] args) {
         String[] parts = arg.split("=");
         if (parts.length != 2 || parts[1].isEmpty()) {
-            printError("--output parameter value cannot be empty. Use --output=file for file output or --output=console for console output.");
+            printError("--output parameter value cannot be empty. " +
+                    "Use --output=file for file output or --output=console for console output.");
             return false;
         }
         if (parts[1].equalsIgnoreCase("file")) {
@@ -339,7 +371,7 @@ public class Main {
         }
 
         if (!invalidData.isEmpty()) {
-            writer.println("Некорректные данные:");
+            writer.println("Incorrect data:");
             for (String invalid : invalidData) {
                 writer.println(invalid);
             }
