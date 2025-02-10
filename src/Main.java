@@ -303,21 +303,29 @@ public class Main {
     }
 
     private static void writeData(PrintWriter writer) {
-        for (Map.Entry<Long, Manager> entry : managerMap.entrySet()) {
-            Manager manager = entry.getValue();
-            String departmentName = manager.departmentName;
+        List<String> sortedDepartmentNames = new ArrayList<>(departmentStats.keySet());
+        Collections.sort(sortedDepartmentNames);
 
-            writer.println(departmentName);
-            writer.println(manager.toString());
+        for (String departmentName : sortedDepartmentNames) {
+            DepartmentStats stats = departmentStats.get(departmentName);
+            if (stats != null) {
+                for (Map.Entry<Long, Manager> entry : managerMap.entrySet()) {
+                    Manager manager = entry.getValue();
+                    if (manager.departmentName.equals(departmentName)) {
+                        writer.println(departmentName);
+                        writer.println(manager.toString());
 
-            List<Employee> subordinates = departmentEmployees.get(manager.id);
-            if (subordinates != null) {
-                for (Employee subordinate : subordinates) {
-                    writer.println(subordinate.toString());
+                        List<Employee> subordinates = departmentEmployees.get(manager.id);
+                        if (subordinates != null) {
+                            for (Employee subordinate : subordinates) {
+                                writer.println(subordinate.toString());
+                            }
+                        }
+                        writer.println(stats.getStats());
+                        writer.println();
+                    }
                 }
             }
-            writer.println(departmentStats.get(departmentName).getStats());
-            writer.println();
         }
 
         if (!invalidData.isEmpty()) {
