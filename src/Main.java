@@ -225,13 +225,13 @@ public class Main {
                     Manager manager = new Manager(position, id, name, salary, departmentName);
                     persons.add(manager);
                     managerMap.put(id, manager);
-                    departmentStats.put(departmentName, new DepartmentStats());
+                    departmentStats.putIfAbsent(departmentName, new DepartmentStats());
                     departmentStats.get(departmentName).addEmployee(salary);
                 } else if ("Employee".equalsIgnoreCase(position)) {
-                    String managerId = parts[4].trim();
+                    String managerIdStr = parts[4].trim();
                     try {
-                        Long manId = Long.parseLong(managerId);
-                        Employee employee = new Employee(position, id, name, salary, manId);
+                        Long managerId = Long.parseLong(managerIdStr);
+                        Employee employee = new Employee(position, id, name, salary, managerId);
                         persons.add(employee);
                     } catch (NumberFormatException e) {
                         invalidData.add(line);
@@ -307,25 +307,33 @@ public class Main {
         Collections.sort(sortedDepartmentNames);
 
         for (String departmentName : sortedDepartmentNames) {
-            DepartmentStats stats = departmentStats.get(departmentName);
-            if (stats != null) {
-                for (Map.Entry<Long, Manager> entry : managerMap.entrySet()) {
-                    Manager manager = entry.getValue();
-                    if (manager.departmentName.equals(departmentName)) {
-                        writer.println(departmentName);
-                        writer.println(manager.toString());
+            writer.println(departmentName);
 
-                        List<Employee> subordinates = departmentEmployees.get(manager.id);
-                        if (subordinates != null) {
-                            for (Employee subordinate : subordinates) {
-                                writer.println(subordinate.toString());
-                            }
-                        }
-                        writer.println(stats.getStats());
-                        writer.println();
+            List<Manager> managersInDepartment = new ArrayList<>();
+            List<Employee> allSubordinatesInDepartment = new ArrayList<>();
+
+            for (Manager manager : managerMap.values()) {
+                if (manager.departmentName.equals(departmentName)) {
+                    managersInDepartment.add(manager);
+
+                    List<Employee> subordinates = departmentEmployees.get(manager.id);
+                    if (subordinates != null) {
+                        allSubordinatesInDepartment.addAll(subordinates);
                     }
                 }
             }
+
+            for (Manager manager : managersInDepartment) {
+                writer.println(manager.toString());
+            }
+
+            for (Employee employee : allSubordinatesInDepartment) {
+                writer.println(employee.toString());
+            }
+
+            DepartmentStats stats = departmentStats.get(departmentName);
+            writer.println(stats.getStats());
+            writer.println();
         }
 
         if (!invalidData.isEmpty()) {
