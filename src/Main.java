@@ -74,62 +74,11 @@ public class Main {
     public static void main(String[] args) {
         String inputFile = "input_file.txt";
         Set<String> validFlags = new HashSet<>(Arrays.asList("--output=", "--path",
-                                                            "--sort=", "--order=",
-                                                            "-s=", "-o="));
+                "--sort=", "--order=",
+                "-s=", "-o="));
 
-        for (String arg : args) {
-            boolean isValidFlag = validFlags.stream().anyMatch(arg::startsWith);
-            if (!isValidFlag) {
-                System.err.println("Error: Unknown flag: " + arg);
-                return;
-            }
-
-            if (arg.startsWith("--output=")|| arg.startsWith("-o=")) {
-                String[] parts = arg.split("=");
-                if (parts.length != 2 || parts[1].isEmpty()) {
-                    System.err.println("Error: --output parameter value cannot be empty. " +
-                            "Use --output=file for file output or --output=console for console output.");
-                    return;
-                }
-                if (parts[1].equalsIgnoreCase("file")) {
-                    outputPath = getOutputPath(args);
-                    if (outputPath == null) {
-                        System.err.println("Error: Path to output file is missing.");
-                        return;
-                    }
-                } else if (parts[1].equalsIgnoreCase("console")) {
-                    outputPath = null;
-                    if (Arrays.stream(args).anyMatch(argPath -> argPath.startsWith("--path="))) {
-                        System.err.println("Error: --path cannot be specified when --output is set to console.");
-                        return;
-                    }
-                } else {
-                    System.err.println("Error: Invalid value for --output. Use --output=file or --output=console.");
-                    return;
-                }
-            } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
-                String[] parts = arg.split("=");
-                if (parts.length != 2 || parts[1].isEmpty() || (!"name".equalsIgnoreCase(parts[1]) && !"salary".equalsIgnoreCase(parts[1]))) {
-                    System.err.println("Error: Invalid value for --sort or -s. Only --sort=name or --sort=salary is allowed.");
-                    return;
-                }
-                sortField = parts[1].toLowerCase();
-            } else if (arg.startsWith("--order=")) {
-                String[] parts = arg.split("=");
-                if (parts.length != 2 || parts[1].isEmpty()) {
-                    System.err.println("Error: --order parameter value cannot be empty. Use --order=asc or --order=desc.");
-                    return;
-                }
-                if (sortField == null) {
-                    System.err.println("Error: --order parameter cannot be specified without --sort.");
-                    return;
-                }
-                sortOrder = parts[1].toLowerCase();
-                if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
-                    System.err.println("Error: Invalid order specified. Use 'asc' or 'desc'.");
-                    return;
-                }
-            }
+        if (!parseArguments(args, validFlags)) {
+            return;
         }
 
         if (outputPath == null) {
@@ -140,11 +89,99 @@ public class Main {
         processPersons();
 
         if (sortField != null && sortOrder == null) {
-            System.err.println("Error: --order parameter is required when --sort is specified.");
+            printError("--order parameter is required when --sort is specified.");
             return;
         }
 
         writeOutput();
+    }
+
+    private static boolean parseArguments(String[] args, Set<String> validFlags) {
+        for (String arg : args) {
+            if (!isValidFlag(arg, validFlags)) {
+                printError("Unknown flag: " + arg);
+                return false;
+            }
+
+            if (arg.startsWith("--output=") || arg.startsWith("-o=")) {
+                if (!handleOutputFlag(arg, args)) {
+                    return false;
+                }
+            } else if (arg.startsWith("--sort=") || arg.startsWith("-s=")) {
+                if (!handleSortFlag(arg)) {
+                    return false;
+                }
+            } else if (arg.startsWith("--order=")) {
+                if (!handleOrderFlag(arg)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+    private static boolean isValidFlag(String arg, Set<String> validFlags) {
+        return validFlags.stream().anyMatch(arg::startsWith);
+    }
+
+    private static void printError(String message) {
+        System.err.println("Error: " + message);
+    }
+
+    private static boolean handleOutputFlag(String arg, String[] args) {
+        String[] parts = arg.split("=");
+        if (parts.length != 2 || parts[1].isEmpty()) {
+            printError("--output parameter value cannot be empty. Use --output=file for file output or --output=console for console output.");
+            return false;
+        }
+        if (parts[1].equalsIgnoreCase("file")) {
+            outputPath = getOutputPath(args);
+            if (outputPath == null) {
+                printError("Path to output file is missing.");
+                return false;
+            }
+        } else if (parts[1].equalsIgnoreCase("console")) {
+            outputPath = null;
+            if (Arrays.stream(args).anyMatch(argPath -> argPath.startsWith("--path="))) {
+                printError("--path cannot be specified when --output is set to console.");
+                return false;
+            }
+        } else {
+            printError("Invalid value for --output. Use --output=file or --output=console.");
+            return false;
+        }
+        return true;
+    }
+
+
+    private static boolean handleSortFlag(String arg) {
+        String[] parts = arg.split("=");
+        if (parts.length != 2 || parts[1].isEmpty() ||
+                (!"name".equalsIgnoreCase(parts[1]) && !"salary".equalsIgnoreCase(parts[1]))) {
+            printError("Invalid value for --sort or -s. Only --sort=name or --sort=salary is allowed.");
+            return false;
+        }
+        sortField = parts[1].toLowerCase();
+        return true;
+    }
+
+    private static boolean handleOrderFlag(String arg) {
+        String[] parts = arg.split("=");
+        if (parts.length != 2 || parts[1].isEmpty()) {
+            printError("--order parameter value cannot be empty. Use --order=asc or --order=desc.");
+            return false;
+        }
+        if (sortField == null) {
+            printError("--order parameter cannot be specified without --sort.");
+            return false;
+        }
+        sortOrder = parts[1].toLowerCase();
+        if (!"asc".equalsIgnoreCase(sortOrder) && !"desc".equalsIgnoreCase(sortOrder)) {
+            printError("Invalid order specified. Use 'asc' or 'desc'.");
+            return false;
+        }
+        return true;
     }
 
     private static String getOutputPath(String[] args) {
