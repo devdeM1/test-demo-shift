@@ -55,7 +55,7 @@ Employee, 101, John Doe, 3000.5, HR
 Пример:
 
 ```
-Manager, 123, Zoe Hill, 100000000, HR
+Manager, 123, Zoe Hill, 10000, HR
 Manager, 181, Chris White, 3000.5, HR
 ```
 
